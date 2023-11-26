@@ -3,6 +3,9 @@ from openai import OpenAI
 import os
 import requests
 import json
+#CA:0E:D4:AD:FC:7A:8D:EB
+#3A:D7:D4:AD:FC:7B:09:95
+#H61A0
 
 load_dotenv()
 govee_base_url = "https://developer-api.govee.com/v1"
@@ -81,12 +84,6 @@ def change_all_lights_color(color):
         x = requests.put(url, headers=headers, json=data)
     return x.text
 
-
-
-
-
-
-
 def change_room_lights(state, room):
     url = govee_base_url + "/devices/control"
     headers = {"Content-Type": "application/json",
@@ -146,8 +143,3 @@ def set_color(color):
         }}
         x = requests.put(url, headers=headers, json=data)
     return x.text
-
-#CA:0E:D4:AD:FC:7A:8D:EB
-#3A:D7:D4:AD:FC:7B:09:95
-#H61A0
-
