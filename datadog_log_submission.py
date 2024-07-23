@@ -15,12 +15,11 @@ def send_log(message, status):
     body = HTTPLog(
         [
             HTTPLogItem(
-                ddsource="jarvis",
+                ddsource="python",
                 ddtags="env:jarvis,version:1.0",
                 hostname="jarvis",
                 message=message,
                 service="jarvis",
-                status=status,
             ),
         ]
     )
@@ -31,3 +30,6 @@ def send_log(message, status):
         response = api_instance.submit_log(content_encoding=ContentEncoding.DEFLATE, body=body)
 
         print(response)
+
+print("Sending log...")
+send_log("Failed to store card data in card data service.", "info")

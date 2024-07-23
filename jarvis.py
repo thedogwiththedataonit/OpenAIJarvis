@@ -15,6 +15,12 @@ client = OpenAI(
     # defaults to os.environ.get("OPENAI_API_KEY")
     api_key=os.environ['OPENAI_API_KEY']
 )
+conversation = ""
+user_name = "You"
+bot_name = "assistant"
+messages=[ #max length? say 4 messages
+    {"role": "system", "content": "You are a laid back and chill friend. You respond with casual statements and are friendly."},
+  ]
 messages=[
     {"role": "system", "content": "You are a laid back and chill friend. You respond with casual statements and are friendly."},
     {"role": "user", "content": "Turn on my lights"},
@@ -81,38 +87,38 @@ confirmation_phrases=[
     "No problem!",
     "I'm on it!",
 ]
-engine = pyttsx3.init("dummy")
 
+engine = pyttsx3.init("dummy")
 r = sr.Recognizer()
 mic = sr.Microphone()
 
 
-conversation = ""
-user_name = "You"
-bot_name = "assistant"
-messages=[ #max length? say 4 messages
-    {"role": "system", "content": "You are a laid back and chill friend. You respond with casual statements and are friendly."},
-    
-  ]
-
-
-
+# start the conversation
 while True:
     with mic as source:
         print("\nlistening...")
         r.adjust_for_ambient_noise(source, duration=0.2)
         audio = r.listen(source)
+        # create a input audio file
+        with open("input.wav", "wb") as f:
+            f.write(audio.get_wav_data())
     print("no longer listening.\n")
 
     try:
         print("recognizing...")
-        user_input = r.recognize_google(audio)
+        #user_input = r.recognize_google(audio)
+        audio_file = open("input.wav", "rb")
+        user_input = client.audio.translations.create(
+            model="whisper-1", 
+            file=audio_file,
+            response_format="text"
+            )
         print("You: " + user_input)
     except sr.UnknownValueError:
         print("Could not understand audio")
         continue
     
-    #create a new dictionary for the user's message
+    # create a new dictionary for the user's message
     user_message = {"role": "user", "content": user_input}
     if len(messages) > 4:
         messages.pop(0)
@@ -120,7 +126,7 @@ while True:
 
     response = client.chat.completions.create(
         model="gpt-3.5-turbo-0613",
-        functions=function_descriptions,
+        functions=function_descriptions, # ASSISTANT FUNCTION CALLS
         messages=messages,
         function_call="auto"
         )
@@ -129,21 +135,21 @@ while True:
         response_str = random.choice(confirmation_phrases)
         api_response = response.choices[0].message
 
-        #ASSISTANT FUNCTION CALLS
+        # ASSISTANT FUNCTION CALLS
 
-        #turn all lights on or off
+        # turn all lights on or off
         if api_response.function_call.name == "turn_all_lights":
             light_status = json.loads(api_response.function_call.arguments).get("turn")
             print("...turning lights", light_status + "...")
             turn_all_lights(light_status)
 
-        #change all lights to a color
+        # change all lights to a color
         elif api_response.function_call.name == "set_color":
             color = json.loads(api_response.function_call.arguments)
             print("...changing color...")
             change_all_lights_color(color)
 
-        #send a log to datadog
+        # send a log to datadog
         elif api_response.function_call.name == "send_log":
             message = json.loads(api_response.function_call.arguments).get("message")
             status = json.loads(api_response.function_call.arguments).get("status")
@@ -156,7 +162,7 @@ while True:
         response_str = response.choices[0].message.content
 
 
-    #create a new dictionary for the bot's message
+    # create a new dictionary for the bot's message
     bot_message = {"role": bot_name, "content": response_str}
     if len(messages) > 4:
         messages.pop(0)
